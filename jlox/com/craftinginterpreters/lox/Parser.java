@@ -24,16 +24,35 @@ class Parser {
   }
 
   /*
-   * expression -> equality (, equality)*;
-   * expression -> (equality ,)* equality;
+   * expression -> ternary (, ternary)*;
    */
   private Expr expression() {
-    Expr expr = equality();
+    Expr expr = ternary();
 
     while (match(COMMA)) {
       Token comma = previous();
       Expr right = expression();
       expr = new Expr.Binary(expr, comma, right);
+    }
+
+    return expr;
+  }
+
+  /*
+   * conditional -> equality ('?' equality : equality)?;
+   */
+  private Expr ternary() {
+    Expr expr = equality();
+
+    if (match(QUESTION)) {
+      Token question = previous();
+      Expr middle = equality();
+      if (match(COLON)) {
+        Token colon = previous();
+        Expr right = equality();
+        return new Expr.Ternary(expr, question, middle, colon, right);
+      }
+      throw error(peek(), "Expected ':' for ternary operator.");
     }
 
     return expr;
