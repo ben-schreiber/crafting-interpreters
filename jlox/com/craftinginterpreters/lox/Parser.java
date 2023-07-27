@@ -39,20 +39,18 @@ class Parser {
   }
 
   /*
-   * conditional -> equality ('?' equality : equality)?;
+   * conditional -> equality ('?' ternary : ternary)?;
    */
   private Expr ternary() {
     Expr expr = equality();
 
     if (match(QUESTION)) {
       Token question = previous();
-      Expr middle = equality();
-      if (match(COLON)) {
-        Token colon = previous();
-        Expr right = equality();
-        return new Expr.Ternary(expr, question, middle, colon, right);
-      }
-      throw error(peek(), "Expected ':' for ternary operator.");
+      Expr middle = ternary();
+      consume(COLON, "Expected ':' for ternary operator.");
+      Token colon = previous();
+      Expr right = ternary();
+      return new Expr.Ternary(expr, question, middle, colon, right);
     }
 
     return expr;
@@ -134,7 +132,17 @@ class Parser {
       return new Expr.Grouping(expr);
     }
 
+    binaryErrorProduction();
+
     throw error(peek(), "Expect expression.");
+  }
+
+  private void binaryErrorProduction() {
+    if (match(BANG_EQUAL, EQUAL_EQUAL, GREATER, GREATER_EQUAL, LESS, LESS_EQUAL, DOT, MINUS, PLUS, SLASH, STAR)) {
+      Token binaryOp = previous();
+      comparison();  // Evaluate and throw away the right hand operand
+      throw error(binaryOp, "Missing left hand operand for binary operator.");
+    }
   }
 
   private Token consume(TokenType type, String message) {

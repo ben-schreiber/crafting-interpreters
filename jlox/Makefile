@@ -5,8 +5,13 @@ JCFLAGS := -cp $(SRC_DIR)/
 .SUFFIXES: .java
 .PHONY: all clean
 
-all:
+jlox:
 	$(JC) $(JCFLAGS) $(SRC_DIR)/*.java
+
+tool:
+	$(JC) com/craftinginterpreters/tool/*.java
+
+all: jlox tool
 
 clean:
 	rm com/craftinginterpreters/{lox,tool}/*.class
