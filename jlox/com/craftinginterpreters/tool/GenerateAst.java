@@ -14,10 +14,18 @@ public class GenerateAst {
     String outputDir = args[0];
     defineAst(outputDir, "Expr", Arrays.asList(
         "Binary   : Expr left, Token operator, Expr right",
+        "Assign   : Token name, Expr value",
         "Grouping : Expr expression",
         "Literal  : Object value",
-        "Ternary  : Expr left, Token firstOp, Expr middle, Token secondOp, Expr right",
-        "Unary    : Token operator, Expr right"));
+        "Unary    : Token operator, Expr right",
+        "Variable : Token name"
+        ));
+
+    defineAst(outputDir, "Stmt", Arrays.asList(
+        "Expression : Expr expression",
+        "Print      : Expr expression",
+        "Var        : Token name, Expr initializer"
+        ));
   }
 
   private static void defineAst(
@@ -80,7 +88,6 @@ public class GenerateAst {
 
     writer.println("    }");
 
-
     // Visitor pattern.
     writer.println();
     writer.println("    @Override");
@@ -97,4 +104,5 @@ public class GenerateAst {
 
     writer.println("  }");
   }
+
 }

@@ -141,19 +141,20 @@ class Scanner {
 
   private void blockComment() {
     int counter = 1;
-    for (;;) {
-      if (peek() == '/' && peekNext() == '*' && !isAtEnd()) {
+    while (!isAtEnd()) {
+      if (peek() == '/' && peekNext() == '*') {
         counter++;
         advance();
-      }
-      else if (peek() == '*' && peekNext() == '/' && !isAtEnd()) {
+      } else if (peek() == '*' && peekNext() == '/') {
         counter--;
         advance();
-      }
-      else if (peek() == '\n') line++;
+      } else if (peek() == '\n')
+        line++;
       advance();
-      if (counter == 0 || isAtEnd()) break;
+      if (counter == 0)
+        return;
     }
+    Lox.error(new Token(EOF, "", null, line), "Unterminated block comment");
   }
 
   private void identifier() {
