@@ -32,7 +32,7 @@ class TokenType(Enum):
     NUMBER = auto()
 
     # Keywords.
-    AND = "&&"
+    AND = "and"
     CLASS = "class"
     ELSE = "else"
     FALSE = "false"
@@ -40,7 +40,7 @@ class TokenType(Enum):
     FOR = "for"
     IF = "if"
     NIL = "nil"
-    OR = "||"
+    OR = "or"
     PRINT = "print"
     RETURN = "return"
     SUPER = "super"
@@ -50,3 +50,14 @@ class TokenType(Enum):
     WHILE = "while"
 
     EOF = "EOF"
+
+    @classmethod
+    def types(cls) -> set[str]:
+        return set(map(str, cls.__members__.values()))
+
+    def __str__(self) -> str:
+        return self.value
+    
+    @classmethod
+    def contains(cls, key: str) -> bool:
+        return key in cls.types()

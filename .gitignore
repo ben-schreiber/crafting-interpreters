@@ -1,2 +1,3 @@
 .vscode/
 craftinginterpreters
+.mypy_cache

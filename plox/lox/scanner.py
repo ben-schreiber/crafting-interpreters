@@ -10,13 +10,13 @@ class Scanner:
         self.source = source
         self.current = self.start = 0
         self.line = 1
-        self.tokens = []
+        self.tokens: list[Token] = []
 
     @property
     def at_end(self) -> bool:
         return self.current >= len(self.source)
 
-    def scan_token(self) -> Token | None:
+    def scan_token(self) -> Token | None:  # type: ignore[return]
         match self.advance():
             case "(" | ")" | "{" | "}" | "," | "." | "-" | "+" | ";" | "*" as token:
                 return self.add_token(TokenType(token))
@@ -54,14 +54,16 @@ class Scanner:
     def identifier(self) -> Token:
         while self.peek.isalnum():
             self.advance()
-        return self.add_token(TokenType.IDENTIFIER)
+
+        text = self.source[self.start : self.current]
+        return self.add_token(TokenType(text) if TokenType.contains(text) else TokenType.IDENTIFIER)
 
     def number(self) -> Token:
-        while self._is_digit(self.peek):
+        while self.peek.isdigit():
             self.advance()
-        if self.peek == "." and self._is_digit(self.peek_next):
+        if self.peek == "." and self.peek_next.isdigit():
             self.advance()
-            while self._is_digit(self.peek):
+            while self.peek.isdigit():
                 self.advance()
         return self.add_token(TokenType.NUMBER, float(self.source[self.start : self.current]))
 
@@ -71,7 +73,7 @@ class Scanner:
             return "\0"
         return self.source[self.current + 1]
 
-    def string(self) -> Token:
+    def string(self) -> Token | None:
         while (peek := self.peek) != '"' and not self.at_end:
             if peek == "\n":
                 self.line += 1
