@@ -1,0 +1,70 @@
+[build-system]
+build-backend = "setuptools.build_meta"
+requires = ["setuptools>=65.6", "versioningit~=2.1", "wheel>=0.38.4",]
+
+[project]
+name = "plox"
+description = "Plox"
+requires-python = ">=3.11,<4.0"
+dependencies = []
+
+dynamic = ["version", ]
+readme = "README.md"
+
+[tool.setuptools.packages.find]
+include = ["lox", "lox.*"]
+namespaces = false
+
+
+########################
+## Dynamic Versioning ##
+########################
+[tool.versioningit]
+[tool.versioningit.vcs]
+default-tag = "0.0.0"
+match = ["v*", ]
+method = "git"
+
+[tool.versioningit.tag2version]
+rmprefix = "v"
+
+[tool.versioningit.write]
+file = "lox/_version.py"
+
+
+#############
+## Linting ##
+#############
+[tool.black]
+line_length = 120
+
+[tool.isort]
+profile = "black"
+line_length = 120
+
+[tool.pylint]
+fail-under = 10.0
+disable = [
+    "missing-module-docstring",
+    "too-few-public-methods"
+]
+min-similarity-lines = 8
+docstring-min-length = 5
+
+[tool.pylint.basic]
+argument-naming-style = "snake_case"
+argument-rgx = "^_{0,2}[a-z][a-z_0-9]*$"
+module-naming-style = "snake_case"
+method-rgx = "(^[a-z_][a-z0-9_]{2,40}$)|(^t_[A-Z_]{2,40}$)"
+variable-naming-style = "snake_case"
+variable-rgx = "^_{0,2}[a-z][a-z_0-9]*$"
+
+[tool.pylint.format]
+max-line-length = 120
+
+##################
+## Typechecking ##
+##################
+
+[tool.mypy]
+strict = true

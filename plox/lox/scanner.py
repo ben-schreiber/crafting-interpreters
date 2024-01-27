@@ -1,8 +1,8 @@
 from typing import Any, Generator
 
 from lox.errors import handler
-from lox.token import Token
 from lox.token_type import TokenType
+from lox.tokens import Token
 
 
 class Scanner:
@@ -79,9 +79,9 @@ class Scanner:
                 self.line += 1
             self.advance()
 
-        if not self.at_end:
+        if self.at_end:
             handler.error(self.line, "Unterminated string.")
-            return
+            return None
 
         self.advance()
         return self.add_token(TokenType.STRING, self.source[self.start + 1 : self.current - 1])

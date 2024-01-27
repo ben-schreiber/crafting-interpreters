@@ -56,8 +56,8 @@ class TokenType(Enum):
         return set(map(str, cls.__members__.values()))
 
     def __str__(self) -> str:
-        return self.value
-    
+        return str(self.value)
+
     @classmethod
     def contains(cls, key: str) -> bool:
         return key in cls.types()
