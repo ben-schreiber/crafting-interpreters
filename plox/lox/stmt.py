@@ -29,6 +29,9 @@ class Visitor(Protocol[T]):
     def visit_var(self, expr: Var) -> T:
         pass
 
+    def visit_block(self, expr: Block) -> T:
+        pass
+
 
 @dataclass
 class Expression(Stmt):
@@ -53,3 +56,11 @@ class Var(Stmt):
 
     def accept(self, visitor: Visitor[T]) -> T:
         return visitor.visit_var(self)
+
+
+@dataclass
+class Block(Stmt):
+    statments: list[Stmt | None]
+
+    def accept(self, visitor: Visitor[T]) -> T:
+        return visitor.visit_block(self)

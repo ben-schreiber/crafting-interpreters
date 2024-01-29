@@ -34,6 +34,9 @@ class Visitor(Protocol[T]):
     def visit_variable(self, expr: Variable) -> T:
         pass
 
+    def visit_assign(self, expr: Assign) -> T:
+        pass
+
 
 @dataclass
 class Binary(Expr):
@@ -76,3 +79,12 @@ class Variable(Expr):
 
     def accept(self, visitor: Visitor[T]) -> T:
         return visitor.visit_variable(self)
+
+
+@dataclass
+class Assign(Expr):
+    name: Token
+    value: Expr
+
+    def accept(self, visitor: Visitor[T]) -> T:
+        return visitor.visit_assign(self)

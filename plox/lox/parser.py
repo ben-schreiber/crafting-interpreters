@@ -41,7 +41,16 @@ class Parser:
     def __statement(self) -> s.Stmt:
         if self.__match(TokenType.PRINT):
             return self.__print_statement()
+        if self.__match(TokenType.LEFT_BRACE):
+            return s.Block(self.__block())
         return self.__expression_statement()
+
+    def __block(self) -> list[s.Stmt | None]:
+        statments: list[s.Stmt | None] = []
+        while not self.__check(TokenType.RIGHT_BRACE) and not self.__is_at_end:
+            statments.append(self.__declaration())
+        self.__consume(TokenType.RIGHT_BRACE, "Expect '}' after block.")
+        return statments
 
     def __expression_statement(self) -> s.Stmt:
         expr = self.__expression()
@@ -54,7 +63,22 @@ class Parser:
         return s.Print(value)
 
     def __expression(self) -> e.Expr:
-        return self.__equality()
+        return self.__assignment()
+
+    def __assignment(self) -> e.Expr:
+        expr = self.__equality()
+
+        if self.__match(TokenType.EQUAL):
+            equals = self.__previous
+            value = self.__assignment()
+
+            if isinstance(expr, e.Variable):
+                name = expr.name
+                return e.Assign(name, value)
+
+            self.__error(equals, "Invalid assignment target.")
+
+        return expr
 
     def __equality(self) -> e.Expr:
         expr = self.__comparison()

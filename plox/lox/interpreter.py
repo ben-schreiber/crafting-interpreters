@@ -4,8 +4,8 @@ import lox.expr as e
 import lox.stmt as s
 from lox.environment import Environment
 from lox.errors import LoxRuntimeError, handler
-from lox.expr import Variable
-from lox.stmt import Var
+from lox.expr import Assign, Variable
+from lox.stmt import Block, Var
 from lox.token_type import TokenType
 from lox.tokens import Token
 
@@ -21,7 +21,9 @@ class Interpreter(e.Visitor[Any], s.Visitor[Any]):
     def visit_grouping(self, expr: e.Grouping) -> Any:
         return self.__evaluate(expr.expression)
 
-    def __evaluate(self, expr: e.Expr) -> Any:
+    def __evaluate(self, expr: e.Expr | None) -> Any:
+        if expr is None:
+            return
         return expr.accept(self)
 
     def visit_unary(self, expr: e.Unary) -> Any:
@@ -102,14 +104,16 @@ class Interpreter(e.Visitor[Any], s.Visitor[Any]):
 
         return bool(a == b)
 
-    def interpret(self, statements: list[s.Stmt]) -> None:
+    def interpret(self, statements: list[s.Stmt | None]) -> None:
         try:
             for stmt in statements:
                 self.__execute(stmt)
         except LoxRuntimeError as e:
             handler.runtime_error(e)
 
-    def __execute(self, stmt: s.Stmt) -> None:
+    def __execute(self, stmt: s.Stmt | None) -> None:
+        if stmt is None:
+            return
         stmt.accept(self)
 
     @staticmethod
@@ -141,3 +145,20 @@ class Interpreter(e.Visitor[Any], s.Visitor[Any]):
 
     def visit_variable(self, expr: e.Variable) -> Any:
         return self.__environment.get(expr.name)
+
+    def visit_assign(self, expr: e.Assign) -> Any:
+        value = self.__evaluate(expr.value)
+        self.__environment.assign(expr.name, value)
+        return value
+
+    def visit_block(self, expr: s.Block) -> Any:
+        self.__execute_block(expr.statments, Environment(self.__environment))
+
+    def __execute_block(self, statements: list[s.Stmt | None], environment: Environment) -> None:
+        previous = self.__environment
+        try:
+            self.__environment = environment
+            for statement in statements:
+                self.__execute(statement)
+        finally:
+            self.__environment = previous
