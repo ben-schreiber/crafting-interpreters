@@ -4,7 +4,6 @@ from lox.tokens import Token
 
 
 class AstPrinter(Visitor[str]):
-
     def print(self, expr: Expr) -> str:
         return expr.accept(self)
 

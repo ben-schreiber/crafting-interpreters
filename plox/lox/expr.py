@@ -37,6 +37,9 @@ class Visitor(Protocol[T]):
     def visit_assign(self, expr: Assign) -> T:
         pass
 
+    def visit_logical(self, expr: Logical) -> T:
+        pass
+
 
 @dataclass
 class Binary(Expr):
@@ -88,3 +91,13 @@ class Assign(Expr):
 
     def accept(self, visitor: Visitor[T]) -> T:
         return visitor.visit_assign(self)
+
+
+@dataclass
+class Logical(Expr):
+    left: Expr
+    operator: Token
+    right: Expr
+
+    def accept(self, visitor: Visitor[T]) -> T:
+        return visitor.visit_logical(self)

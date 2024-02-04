@@ -7,7 +7,6 @@ from lox.tokens import Token
 
 
 class Environment:
-
     def __init__(self, enclosing: Environment | None = None) -> None:
         self.__values: dict[str, Any] = {}
         self.enclosing = enclosing

@@ -32,6 +32,12 @@ class Visitor(Protocol[T]):
     def visit_block(self, expr: Block) -> T:
         pass
 
+    def visit_if(self, expr: If) -> T:
+        pass
+
+    def visit_while(self, expr: While) -> T:
+        pass
+
 
 @dataclass
 class Expression(Stmt):
@@ -64,3 +70,22 @@ class Block(Stmt):
 
     def accept(self, visitor: Visitor[T]) -> T:
         return visitor.visit_block(self)
+
+
+@dataclass
+class If(Stmt):
+    condition: e.Expr
+    then_branch: Stmt
+    else_branch: Stmt | None
+
+    def accept(self, visitor: Visitor[T]) -> T:
+        return visitor.visit_if(self)
+
+
+@dataclass
+class While(Stmt):
+    condition: e.Expr
+    body: Stmt
+
+    def accept(self, visitor: Visitor[T]) -> T:
+        return visitor.visit_while(self)

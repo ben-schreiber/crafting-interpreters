@@ -11,7 +11,6 @@ from lox.tokens import Token
 
 
 class Interpreter(e.Visitor[Any], s.Visitor[Any]):
-
     def __init__(self) -> None:
         self.__environment = Environment()
 
@@ -162,3 +161,24 @@ class Interpreter(e.Visitor[Any], s.Visitor[Any]):
                 self.__execute(statement)
         finally:
             self.__environment = previous
+
+    def visit_if(self, expr: s.If) -> Any:
+        if self.__is_truthy(self.__evaluate(expr.condition)):
+            self.__execute(expr.then_branch)
+        elif expr.else_branch is not None:
+            self.__execute(expr.else_branch)
+
+    def visit_logical(self, expr: e.Logical) -> Any:
+        left = self.__evaluate(expr.left)
+
+        if expr.operator.type_ == TokenType.OR:
+            if self.__is_truthy(left):
+                return left
+        elif not self.__is_truthy(left):
+            return left
+
+        return self.__evaluate(expr.right)
+
+    def visit_while(self, expr: s.While) -> Any:
+        while self.__is_truthy(self.__evaluate(expr.condition)):
+            self.__execute(expr.body)
