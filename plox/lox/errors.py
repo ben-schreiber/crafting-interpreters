@@ -1,3 +1,5 @@
+from typing import Any
+
 from lox.token_type import TokenType
 from lox.tokens import Token
 
@@ -7,6 +9,12 @@ class LoxRuntimeError(Exception):
         super().__init__(message, *args)
         self.token = token
         self.message = message
+
+
+class ReturnError(LoxRuntimeError):
+    def __init__(self, value: Any) -> None:
+        super().__init__(None, "")
+        self.value = value
 
 
 class ErrorHandler:

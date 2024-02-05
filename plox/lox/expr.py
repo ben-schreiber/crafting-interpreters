@@ -40,6 +40,9 @@ class Visitor(Protocol[T]):
     def visit_logical(self, expr: Logical) -> T:
         pass
 
+    def visit_call(self, expr: Call) -> T:
+        pass
+
 
 @dataclass
 class Binary(Expr):
@@ -101,3 +104,13 @@ class Logical(Expr):
 
     def accept(self, visitor: Visitor[T]) -> T:
         return visitor.visit_logical(self)
+
+
+@dataclass
+class Call(Expr):
+    callee: Expr
+    paren: Token
+    arguments: list[Expr]
+
+    def accept(self, visitor: Visitor[T]) -> T:
+        return visitor.visit_call(self)

@@ -38,6 +38,12 @@ class Visitor(Protocol[T]):
     def visit_while(self, expr: While) -> T:
         pass
 
+    def visit_function(self, expr: Function) -> T:
+        pass
+
+    def visit_return(self, expr: Return) -> T:
+        pass
+
 
 @dataclass
 class Expression(Stmt):
@@ -89,3 +95,22 @@ class While(Stmt):
 
     def accept(self, visitor: Visitor[T]) -> T:
         return visitor.visit_while(self)
+
+
+@dataclass
+class Function(Stmt):
+    name: Token
+    params: list[Token]
+    body: list[Stmt]
+
+    def accept(self, visitor: Visitor[T]) -> T:
+        return visitor.visit_function(self)
+
+
+@dataclass
+class Return(Stmt):
+    keyword: Token
+    value: e.Expr | None
+
+    def accept(self, visitor: Visitor[T]) -> T:
+        return visitor.visit_return(self)
