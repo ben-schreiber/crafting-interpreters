@@ -5,6 +5,7 @@ from lox.ast_printer import AstPrinter
 from lox.errors import handler
 from lox.interpreter import Interpreter
 from lox.parser import Parser
+from lox.resolver import Resolver
 from lox.scanner import Scanner
 
 
@@ -14,6 +15,12 @@ def run(source: str, interpreter: Interpreter) -> None:
     statements = parser.parse()
 
     if handler.had_error or statements is None:
+        return
+
+    resolver = Resolver(interpreter)
+    resolver.resolve(statements)
+
+    if handler.had_error:
         return
 
     interpreter.interpret(statements)

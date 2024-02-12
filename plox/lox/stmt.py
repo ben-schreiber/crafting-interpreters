@@ -10,7 +10,7 @@ from lox.tokens import Token
 T = TypeVar("T", covariant=True)
 
 
-@dataclass
+@dataclass(frozen=True)
 class Stmt(abc.ABC):
     """Base class"""
 
@@ -20,32 +20,32 @@ class Stmt(abc.ABC):
 
 
 class Visitor(Protocol[T]):
-    def visit_expression(self, expr: Expression) -> T:
+    def visit_expression(self, stmt: Expression) -> T:
         pass
 
-    def visit_print(self, expr: Print) -> T:
+    def visit_print(self, stmt: Print) -> T:
         pass
 
-    def visit_var(self, expr: Var) -> T:
+    def visit_var(self, stmt: Var) -> T:
         pass
 
-    def visit_block(self, expr: Block) -> T:
+    def visit_block(self, stmt: Block) -> T:
         pass
 
-    def visit_if(self, expr: If) -> T:
+    def visit_if(self, stmt: If) -> T:
         pass
 
-    def visit_while(self, expr: While) -> T:
+    def visit_while(self, stmt: While) -> T:
         pass
 
-    def visit_function(self, expr: Function) -> T:
+    def visit_function(self, stmt: Function) -> T:
         pass
 
-    def visit_return(self, expr: Return) -> T:
+    def visit_return(self, stmt: Return) -> T:
         pass
 
 
-@dataclass
+@dataclass(frozen=True)
 class Expression(Stmt):
     expression: e.Expr
 
@@ -53,7 +53,7 @@ class Expression(Stmt):
         return visitor.visit_expression(self)
 
 
-@dataclass
+@dataclass(frozen=True)
 class Print(Stmt):
     expression: e.Expr
 
@@ -61,7 +61,7 @@ class Print(Stmt):
         return visitor.visit_print(self)
 
 
-@dataclass
+@dataclass(frozen=True)
 class Var(Stmt):
     name: Token
     initializer: e.Expr | None
@@ -70,7 +70,7 @@ class Var(Stmt):
         return visitor.visit_var(self)
 
 
-@dataclass
+@dataclass(frozen=True)
 class Block(Stmt):
     statments: list[Stmt | None]
 
@@ -78,7 +78,7 @@ class Block(Stmt):
         return visitor.visit_block(self)
 
 
-@dataclass
+@dataclass(frozen=True)
 class If(Stmt):
     condition: e.Expr
     then_branch: Stmt
@@ -88,7 +88,7 @@ class If(Stmt):
         return visitor.visit_if(self)
 
 
-@dataclass
+@dataclass(frozen=True)
 class While(Stmt):
     condition: e.Expr
     body: Stmt
@@ -97,7 +97,7 @@ class While(Stmt):
         return visitor.visit_while(self)
 
 
-@dataclass
+@dataclass(frozen=True)
 class Function(Stmt):
     name: Token
     params: list[Token]
@@ -107,7 +107,7 @@ class Function(Stmt):
         return visitor.visit_function(self)
 
 
-@dataclass
+@dataclass(frozen=True)
 class Return(Stmt):
     keyword: Token
     value: e.Expr | None

@@ -4,7 +4,7 @@ from typing import Any
 from lox.token_type import TokenType
 
 
-@dataclass
+@dataclass(frozen=True)
 class Token:
     type_: TokenType
     lexeme: str

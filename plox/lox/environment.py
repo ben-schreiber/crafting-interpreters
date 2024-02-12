@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Self
 
 from lox.errors import LoxRuntimeError
 from lox.tokens import Token
@@ -22,6 +22,18 @@ class Environment:
             return self.enclosing.get(name)
 
         raise LoxRuntimeError(name, f"Undefined variable '{name.lexeme}'.")
+
+    def get_at(self, distance: int, name: str) -> Any:
+        return self.ancestor(distance).__values[name]
+
+    def assign_at(self, distance: int, name: Token, value: Any) -> None:
+        self.ancestor(distance).__values[name.lexeme] = value
+
+    def ancestor(self, distance: int) -> Self:
+        environment = self
+        for _ in range(distance):
+            environment = environment.enclosing
+        return environment
 
     def assign(self, name: Token, value: Any) -> None:
         if name.lexeme in self.__values:

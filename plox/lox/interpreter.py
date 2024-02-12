@@ -27,6 +27,7 @@ class _ClockCallable(LoxCallable):
 class Interpreter(e.Visitor[Any], s.Visitor[Any]):
     def __init__(self) -> None:
         self.globals = Environment()
+        self.locals: dict[e.Expr, int] = {}
         self.__environment = self.globals
 
         self.globals.define("clock", _ClockCallable())
@@ -132,6 +133,9 @@ class Interpreter(e.Visitor[Any], s.Visitor[Any]):
             return
         stmt.accept(self)
 
+    def resolve(self, expr: e.Expr, depth: int) -> None:
+        self.locals[expr] = depth
+
     @staticmethod
     def __stringify(__o: Any) -> str:
         if __o is None:
@@ -144,12 +148,12 @@ class Interpreter(e.Visitor[Any], s.Visitor[Any]):
 
         return str(__o)
 
-    def visit_expression(self, expr: s.Expression) -> Any:
-        self.__evaluate(expr.expression)
+    def visit_expression(self, stmt: s.Expression) -> Any:
+        self.__evaluate(stmt.expression)
         return None
 
-    def visit_print(self, expr: s.Print) -> Any:
-        value = self.__evaluate(expr.expression)
+    def visit_print(self, stmt: s.Print) -> Any:
+        value = self.__evaluate(stmt.expression)
         print(self.__stringify(value))
         return None
 
@@ -160,15 +164,27 @@ class Interpreter(e.Visitor[Any], s.Visitor[Any]):
         self.__environment.define(stmt.name.lexeme, value)
 
     def visit_variable(self, expr: e.Variable) -> Any:
-        return self.__environment.get(expr.name)
+        return self.__look_up_variable(expr.name, expr)
+
+    def __look_up_variable(self, name: Token, expr: e.Expr) -> Any:
+        distance = self.locals.get(expr)
+        if distance is None:
+            return self.globals.get(name)
+        return self.__environment.get_at(distance, name.lexeme)
 
     def visit_assign(self, expr: e.Assign) -> Any:
         value = self.__evaluate(expr.value)
-        self.__environment.assign(expr.name, value)
+
+        distance = self.locals.get(expr)
+        if distance is None:
+            self.globals.assign(expr.name, value)
+        else:
+            self.__environment.assign_at(distance, expr.name, value)
+
         return value
 
-    def visit_block(self, expr: s.Block) -> Any:
-        self.execute_block(expr.statments, Environment(self.__environment))
+    def visit_block(self, stmt: s.Block) -> Any:
+        self.execute_block(stmt.statments, Environment(self.__environment))
 
     def execute_block(self, statements: list[s.Stmt | None], environment: Environment) -> None:
         previous = self.__environment
@@ -179,11 +195,11 @@ class Interpreter(e.Visitor[Any], s.Visitor[Any]):
         finally:
             self.__environment = previous
 
-    def visit_if(self, expr: s.If) -> Any:
-        if self.__is_truthy(self.__evaluate(expr.condition)):
-            self.__execute(expr.then_branch)
-        elif expr.else_branch is not None:
-            self.__execute(expr.else_branch)
+    def visit_if(self, stmt: s.If) -> Any:
+        if self.__is_truthy(self.__evaluate(stmt.condition)):
+            self.__execute(stmt.then_branch)
+        elif stmt.else_branch is not None:
+            self.__execute(stmt.else_branch)
 
     def visit_logical(self, expr: e.Logical) -> Any:
         left = self.__evaluate(expr.left)
@@ -196,9 +212,9 @@ class Interpreter(e.Visitor[Any], s.Visitor[Any]):
 
         return self.__evaluate(expr.right)
 
-    def visit_while(self, expr: s.While) -> Any:
-        while self.__is_truthy(self.__evaluate(expr.condition)):
-            self.__execute(expr.body)
+    def visit_while(self, stmt: s.While) -> Any:
+        while self.__is_truthy(self.__evaluate(stmt.condition)):
+            self.__execute(stmt.body)
 
     def visit_call(self, expr: e.Call) -> Any:
         callee: LoxCallable = self.__evaluate(expr.callee)
@@ -209,13 +225,13 @@ class Interpreter(e.Visitor[Any], s.Visitor[Any]):
             raise LoxRuntimeError(expr.paren, f"Expected {callee.arity} arguments but got {len(arguments)}.")
         return callee(self, arguments)
 
-    def visit_function(self, expr: s.Function) -> Any:
-        function = LoxFunction(expr, self.__environment)
-        self.__environment.define(expr.name.lexeme, function)
+    def visit_function(self, stmt: s.Function) -> Any:
+        function = LoxFunction(stmt, self.__environment)
+        self.__environment.define(stmt.name.lexeme, function)
 
-    def visit_return(self, expr: s.Return) -> Any:
+    def visit_return(self, stmt: s.Return) -> Any:
         value: Any = None
-        if expr.value is not None:
-            value = self.__evaluate(expr.value)
+        if stmt.value is not None:
+            value = self.__evaluate(stmt.value)
 
         raise ReturnError(value)

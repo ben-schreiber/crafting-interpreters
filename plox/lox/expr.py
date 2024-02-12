@@ -9,7 +9,7 @@ from lox.tokens import Token
 T = TypeVar("T", covariant=True)
 
 
-@dataclass
+@dataclass(frozen=True)
 class Expr(abc.ABC):
     """Base class"""
 
@@ -44,7 +44,7 @@ class Visitor(Protocol[T]):
         pass
 
 
-@dataclass
+@dataclass(frozen=True)
 class Binary(Expr):
     left: Expr
     operator: Token
@@ -54,7 +54,7 @@ class Binary(Expr):
         return visitor.visit_binary(self)
 
 
-@dataclass
+@dataclass(frozen=True)
 class Grouping(Expr):
     expression: Expr
 
@@ -62,7 +62,7 @@ class Grouping(Expr):
         return visitor.visit_grouping(self)
 
 
-@dataclass
+@dataclass(frozen=True)
 class Literal(Expr):
     value: Any
 
@@ -70,7 +70,7 @@ class Literal(Expr):
         return visitor.visit_literal(self)
 
 
-@dataclass
+@dataclass(frozen=True)
 class Unary(Expr):
     operator: Token
     right: Expr
@@ -79,7 +79,7 @@ class Unary(Expr):
         return visitor.visit_unary(self)
 
 
-@dataclass
+@dataclass(frozen=True)
 class Variable(Expr):
     name: Token
 
@@ -87,7 +87,7 @@ class Variable(Expr):
         return visitor.visit_variable(self)
 
 
-@dataclass
+@dataclass(frozen=True)
 class Assign(Expr):
     name: Token
     value: Expr
@@ -96,7 +96,7 @@ class Assign(Expr):
         return visitor.visit_assign(self)
 
 
-@dataclass
+@dataclass(frozen=True)
 class Logical(Expr):
     left: Expr
     operator: Token
@@ -106,7 +106,7 @@ class Logical(Expr):
         return visitor.visit_logical(self)
 
 
-@dataclass
+@dataclass(frozen=True)
 class Call(Expr):
     callee: Expr
     paren: Token
