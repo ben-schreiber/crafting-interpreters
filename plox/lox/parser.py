@@ -22,6 +22,8 @@ class Parser:
 
     def __declaration(self) -> s.Stmt | None:
         try:
+            if self.__match(TokenType.CLASS):
+                return self.__class_declaration()
             if self.__match(TokenType.FUN):
                 return self.__function("function")
             if self.__match(TokenType.VAR):
@@ -30,6 +32,17 @@ class Parser:
         except ParseError:
             self.__synchronize()
             return None
+
+    def __class_declaration(self) -> s.Stmt:
+        name = self.__consume(TokenType.IDENTIFIER, "Expect class name.")
+        self.__consume(TokenType.LEFT_BRACE, "Expect '{' before class body.")
+
+        methods: list[s.Function] = []
+        while not self.__check(TokenType.RIGHT_BRACE) and not self.__is_at_end:
+            methods.append(self.__function("method"))
+
+        self.__consume(TokenType.RIGHT_BRACE, "Expect '}' after class body.")
+        return s.Class(name, methods)
 
     def __function(self, kind: str) -> s.Stmt:
         name = self.__consume(TokenType.IDENTIFIER, f"Expect {kind} name.")
@@ -162,6 +175,8 @@ class Parser:
             if isinstance(expr, e.Variable):
                 name = expr.name
                 return e.Assign(name, value)
+            elif isinstance(expr, e.Get):
+                return e.Set(expr.obj, expr.name, value)
 
             self.__error(equals, "Invalid assignment target.")
 
@@ -272,6 +287,9 @@ class Parser:
         while True:
             if self.__match(TokenType.LEFT_PAREN):
                 expr = self.__finish_call(expr)
+            elif self.__match(TokenType.DOT):
+                name = self.__consume(TokenType.IDENTIFIER, "Expect property after '.'.")
+                expr = e.Get(expr, name)
             else:
                 break
 
@@ -299,6 +317,8 @@ class Parser:
             return e.Literal(None)
         if self.__match(TokenType.NUMBER, TokenType.STRING):
             return e.Literal(self.__previous.literal)
+        if self.__match(TokenType.THIS):
+            return e.This(self.__previous)
         if self.__match(TokenType.IDENTIFIER):
             return e.Variable(self.__previous)
         if self.__match(TokenType.LEFT_PAREN):

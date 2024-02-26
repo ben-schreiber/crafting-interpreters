@@ -44,6 +44,9 @@ class Visitor(Protocol[T]):
     def visit_return(self, stmt: Return) -> T:
         pass
 
+    def visit_class(self, stmt: Class) -> T:
+        pass
+
 
 @dataclass(frozen=True)
 class Expression(Stmt):
@@ -114,3 +117,12 @@ class Return(Stmt):
 
     def accept(self, visitor: Visitor[T]) -> T:
         return visitor.visit_return(self)
+
+
+@dataclass(frozen=True)
+class Class(Stmt):
+    name: Token
+    methods: list[Function]
+
+    def accept(self, visitor: Visitor[T]) -> T:
+        return visitor.visit_class(self)

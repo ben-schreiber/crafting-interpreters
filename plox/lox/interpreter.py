@@ -8,6 +8,7 @@ import lox.stmt as s
 from lox.environment import Environment
 from lox.errors import LoxRuntimeError, ReturnError, handler
 from lox.lox_callable import LoxCallable
+from lox.lox_class import LoxClass, LoxInstance
 from lox.lox_function import LoxFunction
 from lox.token_type import TokenType
 from lox.tokens import Token
@@ -226,7 +227,7 @@ class Interpreter(e.Visitor[Any], s.Visitor[Any]):
         return callee(self, arguments)
 
     def visit_function(self, stmt: s.Function) -> Any:
-        function = LoxFunction(stmt, self.__environment)
+        function = LoxFunction(stmt, self.__environment, False)
         self.__environment.define(stmt.name.lexeme, function)
 
     def visit_return(self, stmt: s.Return) -> Any:
@@ -235,3 +236,31 @@ class Interpreter(e.Visitor[Any], s.Visitor[Any]):
             value = self.__evaluate(stmt.value)
 
         raise ReturnError(value)
+
+    def visit_class(self, stmt: s.Class) -> Any:
+        self.__environment.define(stmt.name.lexeme, None)
+        methods = {
+            method.name.lexeme: LoxFunction(method, self.__environment, method.name.lexeme == "init")
+            for method in stmt.methods
+        }
+        klass = LoxClass(stmt.name.lexeme, methods)
+        self.__environment.assign(stmt.name, klass)
+
+    def visit_get(self, expr: e.Get) -> Any:
+        obj = self.__evaluate(expr.obj)
+        if isinstance(obj, LoxInstance):
+            return obj.get(expr.name)
+
+        raise LoxRuntimeError(expr.name, "Only instances have properties.")
+
+    def visit_set(self, expr: e.Set) -> Any:
+        obj = self.__evaluate(expr.obj)
+        if not isinstance(obj, LoxInstance):
+            raise LoxRuntimeError(expr.name, "Only instances have fields.")
+
+        value = self.__evaluate(expr.value)
+        obj.set(expr.name, value)
+        return value
+
+    def visit_this(self, expr: e.This) -> Any:
+        return self.__look_up_variable(expr.keyword, expr)

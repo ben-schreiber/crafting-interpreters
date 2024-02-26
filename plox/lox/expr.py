@@ -43,6 +43,15 @@ class Visitor(Protocol[T]):
     def visit_call(self, expr: Call) -> T:
         pass
 
+    def visit_get(self, expr: Get) -> T:
+        pass
+
+    def visit_set(self, expr: Set) -> T:
+        pass
+
+    def visit_this(self, expr: This) -> T:
+        pass
+
 
 @dataclass(frozen=True)
 class Binary(Expr):
@@ -114,3 +123,30 @@ class Call(Expr):
 
     def accept(self, visitor: Visitor[T]) -> T:
         return visitor.visit_call(self)
+
+
+@dataclass(frozen=True)
+class Get(Expr):
+    obj: Expr
+    name: Token
+
+    def accept(self, visitor: Visitor[T]) -> T:
+        return visitor.visit_get(self)
+
+
+@dataclass(frozen=True)
+class Set(Expr):
+    obj: Expr
+    name: Token
+    value: Expr
+
+    def accept(self, visitor: Visitor[T]) -> T:
+        return visitor.visit_set(self)
+
+
+@dataclass(frozen=True)
+class This(Expr):
+    keyword: Token
+
+    def accept(self, visitor: Visitor[T]) -> T:
+        return visitor.visit_this(self)

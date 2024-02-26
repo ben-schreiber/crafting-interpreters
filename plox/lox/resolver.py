@@ -1,26 +1,37 @@
 from contextlib import contextmanager
 from enum import Enum
+from typing import Generator
 
 import lox.expr as e
 import lox.stmt as s
 from lox.errors import handler
+from lox.expr import Get
 from lox.interpreter import Interpreter
+from lox.stmt import Class
 from lox.tokens import Token
 
 
 class FunctionType(Enum):
     NONE = "none"
     FUNCTION = "function"
+    METHOD = "method"
+    INITIALIZER = "initializer"
+
+
+class ClassType(Enum):
+    NONE = "none"
+    CLASS = "class"
 
 
 class Resolver(e.Visitor[None], s.Visitor[None]):
     def __init__(self, interpreter: Interpreter) -> None:
         self.__interpreter = interpreter
         self.__scopes: list[dict[str, bool]] = []
-        self.__current_function: FunctionType = FunctionType.NONE
+        self.__current_function = FunctionType.NONE
+        self.__current_class = ClassType.NONE
 
     @contextmanager
-    def use_scope(self) -> None:
+    def use_scope(self) -> Generator[None, None, None]:
         try:
             self.__scopes.append({})
             yield
@@ -28,13 +39,22 @@ class Resolver(e.Visitor[None], s.Visitor[None]):
             self.__scopes.pop()
 
     @contextmanager
-    def function(self, type_: FunctionType) -> None:
+    def function(self, type_: FunctionType) -> Generator[None, None, None]:
         try:
             enclosing_function = self.__current_function
             self.__current_function = type_
             yield
         finally:
             self.__current_function = enclosing_function
+
+    @contextmanager
+    def klass(self, type_: ClassType) -> Generator[None, None, None]:
+        try:
+            enclosing_class = self.__current_class
+            self.__current_class = type_
+            yield
+        finally:
+            self.__current_class = enclosing_class
 
     def resolve(self, stmt: list[s.Stmt | e.Expr] | s.Stmt | e.Expr) -> None:
         if not isinstance(stmt, list):
@@ -63,7 +83,7 @@ class Resolver(e.Visitor[None], s.Visitor[None]):
             self.__scopes[-1][name.lexeme] = True
 
     def visit_variable(self, expr: e.Variable) -> None:
-        if len(self.__scopes) == 0 and not self.__scopes[-1][expr.name.lexeme]:
+        if len(self.__scopes) > 0 and not self.__scopes[-1][expr.name.lexeme]:
             handler.error_token(expr.name, "Can't read local variable in its own initializer.")
 
         self.__resolve_local(expr, expr.name)
@@ -107,6 +127,8 @@ class Resolver(e.Visitor[None], s.Visitor[None]):
         if self.__current_function == FunctionType.NONE:
             handler.error_token(stmt.keyword, "Can't return from top-level code.")
         if stmt.value is not None:
+            if self.__current_function == FunctionType.INITIALIZER:
+                handler.error_token(stmt.keyword, "Can't return a value from an initializer.")
             self.resolve(stmt.value)
 
     def visit_while(self, stmt: s.While) -> None:
@@ -135,3 +157,28 @@ class Resolver(e.Visitor[None], s.Visitor[None]):
 
     def visit_unary(self, expr: e.Unary) -> None:
         self.resolve(expr.right)
+
+    def visit_class(self, stmt: s.Class) -> None:
+        with self.klass(ClassType.CLASS):
+            self.__declare(stmt.name)
+            self.__define(stmt.name)
+
+            with self.use_scope():
+                self.__scopes[-1]["this"] = True
+                for method in stmt.methods:
+                    declaration = FunctionType.METHOD if method.name.lexeme != "init" else FunctionType.INITIALIZER
+                    self.__resolve_function(method, declaration)
+
+    def visit_get(self, expr: e.Get) -> None:
+        self.resolve(expr.obj)
+
+    def visit_set(self, expr: e.Set) -> None:
+        self.resolve(expr.value)
+        self.resolve(expr.object)
+
+    def visit_this(self, expr: e.This) -> None:
+        if self.__current_class == ClassType.NONE:
+            handler.error_token(expr.keyword, "Can't use 'this' outside of a class.")
+            return
+
+        self.__resolve_local(expr, expr.keyword)
